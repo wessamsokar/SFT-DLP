@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.pyo
+
+.venv/
+venv/
+
+data/sft_dlp.db
+keys/*.bin
+logs/*.log
+
+.pytest_cache/
+dist/
+build/
