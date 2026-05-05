@@ -4,13 +4,23 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from sft_dlp.config import BASE_DIR
 from sft_dlp.core.audit_service import AuditService
 from sft_dlp.core.decryption_engine import DecryptionResult, FileDecryptionEngine
 from sft_dlp.db.repositories import ShareRepository
+from sft_dlp.utils.file_utils import validate_path_within_base
 
 
 @dataclass
 class ShareAccessResult:
+    """Result payload for successful share access.
+
+    Attributes:
+        share_id: Share record identifier.
+        file_id: Related encrypted file identifier.
+        decrypted_path: Path to decrypted plaintext output.
+    """
+
     share_id: int
     file_id: int
     decrypted_path: Path
@@ -36,6 +46,17 @@ class ShareAccessService:
         output_dir: Path,
         actor: str,
     ) -> ShareAccessResult:
+        """Validate token/link, enforce expiration, and decrypt shared file.
+
+        Args:
+            token_or_link: Raw share token or URL-style share link.
+            output_dir: Directory where decrypted content will be written.
+            actor: User identifier used in audit logs.
+
+        Returns:
+            Share access result containing resolved file output.
+        """
+        output_dir = validate_path_within_base(output_dir, base_dir=BASE_DIR)
         token = self._extract_token(token_or_link)
         share_record = self._share_repository.get_by_token(token)
         if not share_record:
@@ -98,6 +119,14 @@ class ShareAccessService:
 
     @staticmethod
     def _extract_token(token_or_link: str) -> str:
+        """Extract normalized token from plain text token or localshare link.
+
+        Args:
+            token_or_link: Input token or URL-like share link.
+
+        Returns:
+            Normalized token value without query parameters.
+        """
         raw = token_or_link.strip()
         if "://" not in raw:
             return raw

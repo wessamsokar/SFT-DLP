@@ -44,6 +44,14 @@ DEFAULT_DLP_RULES = [
 
 
 def _resolve_db_path(raw_db_path: str | None) -> Path:
+    """Resolve custom DB argument to concrete path.
+
+    Args:
+        raw_db_path: Optional user-supplied DB path.
+
+    Returns:
+        Resolved database path.
+    """
     if not raw_db_path:
         return DEFAULT_DB_PATH
     return Path(raw_db_path)
@@ -88,6 +96,14 @@ def initialize_database(db_path: str | None = None, force_reset: bool = False) -
 
 
 def main() -> None:
+    """CLI entry point for database initialization.
+
+    Args:
+        None.
+
+    Returns:
+        None.
+    """
     parser = argparse.ArgumentParser(
         description="Initialize local SQLite database for SFT-DLP"
     )

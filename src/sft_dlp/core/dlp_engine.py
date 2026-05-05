@@ -15,6 +15,15 @@ from sft_dlp.db.repositories import (
 
 @dataclass
 class DlpDecision:
+    """DLP evaluation decision payload.
+
+    Attributes:
+        is_blocked: Whether transfer must be blocked.
+        decision: Decision verb (`allow`, `warn`, `block`).
+        matched_rule_name: Name of first matched blocking/warning rule.
+        matched_excerpt: Snippet or detail that triggered the rule.
+    """
+
     is_blocked: bool
     decision: str
     matched_rule_name: str | None
@@ -30,6 +39,16 @@ class DlpPolicyEngine:
         event_repository: DlpEventRepository,
         audit_service: AuditService,
     ) -> None:
+        """Initialize DLP policy evaluator.
+
+        Args:
+            rule_repository: Repository for active DLP rules.
+            event_repository: Repository for rule hit events.
+            audit_service: Audit writer for DLP outcomes.
+
+        Returns:
+            None.
+        """
         self._rule_repository = rule_repository
         self._event_repository = event_repository
         self._audit_service = audit_service
@@ -42,6 +61,17 @@ class DlpPolicyEngine:
         actor: str,
         file_id: int | None = None,
     ) -> DlpDecision:
+        """Evaluate a transfer candidate against enabled DLP policies.
+
+        Args:
+            file_path: File path to inspect.
+            recipient: Recipient metadata for trust checks.
+            actor: User identifier used for audit logging.
+            file_id: Optional related file id.
+
+        Returns:
+            DLP decision containing block/allow outcome and match context.
+        """
         file_path = file_path.resolve()
         rules = self._rule_repository.get_enabled_rules()
 
@@ -105,6 +135,16 @@ class DlpPolicyEngine:
         file_path: Path,
         recipient: RecipientRecord,
     ) -> str | None:
+        """Run a single DLP rule against a transfer candidate.
+
+        Args:
+            rule: Rule definition.
+            file_path: Candidate file path.
+            recipient: Recipient metadata used by recipient rules.
+
+        Returns:
+            Matched excerpt/details when rule hits; otherwise None.
+        """
         if rule.rule_type == "recipient":
             if "is_authorized=0" in rule.match_expression and not recipient.is_authorized:
                 return f"recipient={recipient.email}"

@@ -1,104 +1,153 @@
 # Secure File Transfer & Data Leakage Prevention System (SFT-DLP)
 
-Local-first desktop application for secure file encryption, controlled sharing, DLP policy enforcement, and complete audit logging.
+SFT-DLP is a local-first desktop application that secures file transfer through strong encryption, DLP policy enforcement, and auditable sharing workflows. It helps prevent accidental or unauthorized data leakage by scanning transfer candidates before sharing and blocking risky content. The system combines cryptography, policy controls, and monitoring in one PyQt5 interface for practical secure collaboration.
 
 ## Features
 
-- Modern, responsive PyQt5 desktop UI with custom QSS theme and sidebar navigation (opens maximized).
-- AES-256-GCM local encryption and decryption using PyCryptodome.
-- OpenSSL-based key management with automatic fallback detection (OPENSSL_BIN, PATH, and common Windows locations).
-- DLP policy engine with pattern, file type, and recipient authorization rules.
-- Secure local share links with strict expiration enforcement and token validation.
-- Comprehensive audit logging, including failed encryption/decryption attempts and invalid share tokens.
-- Audit Logs UI includes status badges (Success, Blocked, Expired, Error).
-
-## Project Structure
-
-```
-SFT-DLP/
-├── data/
-├── keys/
-├── logs/
-├── scripts/
-│   └── init_db.py
-├── src/
-│   └── sft_dlp/
-│       ├── config.py
-│       ├── main.py
-│       ├── core/
-│       │   ├── audit_service.py
-│       │   ├── dlp_engine.py
-│       │   ├── encryption_engine.py
-│       │   ├── key_manager.py
-│       │   └── sharing_service.py
-│       ├── db/
-│       │   ├── connection.py
-│       │   ├── init_db.py
-│       │   ├── repositories.py
-│       │   └── schema.sql
-│       ├── gui/
-│       │   ├── main_window.py
-│       │   └── tabs/
-│       │       ├── audit_logs_tab.py
-│       │       ├── dlp_rules_tab.py
-│       │       └── encryption_tab.py
-│       │       └── sharing_tab.py
-│       └── utils/
-│           └── file_utils.py
-├── requirements.txt
-└── README.md
-```
+- AES-256-GCM file encryption and authenticated decryption.
+- PBKDF2-HMAC-SHA256 key derivation for encryption key material (600,000 iterations).
+- Configurable DLP policy engine:
+  - regex pattern detection (e.g., IDs, credit-card-like content),
+  - file type blocking,
+  - recipient authorization controls.
+- Secure local sharing links with token generation and expiration enforcement.
+- End-to-end audit logging in SQLite for encryption, DLP, sharing, and access attempts.
+- PyQt5 desktop GUI with tabs for Encryption, Sharing, DLP Rules, and Audit Logs.
+- Path traversal protection for user-supplied file/folder paths.
 
 ## Requirements
 
-- Python 3.10+
-- OpenSSL CLI available (auto-detected via OPENSSL_BIN, PATH, or common Windows install paths)
-- Dependencies listed in requirements.txt (PyQt5, PyCryptodome)
+- Python 3.10 or newer.
+- OpenSSL CLI installed and available via `OPENSSL_BIN` or system `PATH`.
+- Operating systems:
+  - Windows 10/11 (primary tested environment),
+  - Linux/macOS (expected compatible with Python + PyQt5 + OpenSSL available).
 
-## Setup
+## Installation & Setup
 
-Install Python dependencies:
+1. Clone the repository:
 
-```powershell
-py -3 -m pip install -r requirements.txt
+```bash
+git clone https://github.com/wessamsokar/SFT-DLP.git
+cd SFT-DLP
 ```
 
-Initialize/reset the local SQLite database:
+2. Create a virtual environment:
 
-```powershell
-py -3 scripts/init_db.py --force-reset
+```bash
+python -m venv .venv
 ```
 
-This creates `data/sft_dlp.db` with all required tables.
+3. Activate the virtual environment:
 
-OpenSSL detection:
-
-- The key manager checks OPENSSL_BIN first, then PATH, then common Windows locations.
-- If OpenSSL is not found, install it, add it to PATH, or set OPENSSL_BIN to the full path.
-
-## Usage
-
-Run the desktop app:
+- Windows PowerShell:
 
 ```powershell
-py -3 -m sft_dlp.main
+.\.venv\Scripts\Activate.ps1
 ```
 
-If needed, run from the source root:
+- Linux/macOS:
 
-```powershell
-$env:PYTHONPATH = "src"
-py -3 -m sft_dlp.main
+```bash
+source .venv/bin/activate
 ```
 
-App tabs overview:
+4. Install dependencies:
 
-- Encryption: Select a file and output folder to encrypt locally (AES-256-GCM).
-- Sharing: Create secure share links with expiry and access shared files via token/link.
-- DLP Rules: Add pattern, file type, or recipient rules; rules are enforced before sharing.
-- Audit Logs: Review all events with status badges (Success, Blocked, Expired, Error), including failed encryption/decryption and invalid token attempts.
+```bash
+pip install -r requirements.txt
+```
 
-## Next Modules
+5. Initialize the SQLite database:
 
-- Recipient and policy administration improvements (edit/disable/delete)
-- Search and filtering in audit logs
+```bash
+python scripts/init_db.py --force-reset
+```
+
+This creates `data/sft_dlp.db` and seeds default DLP rules.
+
+## How to Run
+
+From project root:
+
+```bash
+python scripts/run_app.py
+```
+
+Alternative module run:
+
+```bash
+python -m sft_dlp.main
+```
+
+## Usage Examples
+
+### Encrypt a File
+
+1. Open the **Encryption** tab.
+2. Choose an input file and encrypted output directory.
+3. Click **Encrypt File (AES-256-GCM)**.
+4. Confirm success message and generated `.sftenc` file.
+
+[Screenshot: encryption tab]
+
+### Share a File Securely
+
+1. Open the **Sharing** tab.
+2. Select source file, recipient details, and expiration hours.
+3. Click **Create Secure Share Link**.
+4. If DLP rules are triggered, sharing is blocked with an error message.
+5. Copy/use the generated local share link or token.
+
+
+### View Audit Logs
+
+1. Open the **Audit Logs** tab.
+2. Click **Refresh Logs**.
+3. Review event records with status badges (Success, Blocked, Expired, Error).
+
+[Screenshot: audit logs tab]
+
+## Project Structure
+
+```text
+SFT-DLP/
+├── data/                      # Runtime files (DB, encrypted/decrypted samples)
+├── keys/                      # Local key files used by the key manager
+├── logs/                      # Optional runtime log outputs
+├── scripts/
+│   ├── init_db.py             # CLI entrypoint to initialize/reset SQLite schema
+│   └── run_app.py             # CLI entrypoint to run the desktop app
+├── src/sft_dlp/
+│   ├── config.py              # Global paths and app constants
+│   ├── main.py                # App composition and dependency wiring
+│   ├── core/
+│   │   ├── encryption_engine.py   # AES-256-GCM encryption workflow
+│   │   ├── decryption_engine.py   # AES-256-GCM decryption workflow
+│   │   ├── key_manager.py         # OpenSSL integration and PBKDF2-based key derivation
+│   │   ├── dlp_engine.py          # DLP rule evaluation logic
+│   │   ├── sharing_service.py     # DLP-guarded secure link creation
+│   │   ├── share_access_service.py# Token validation + expiry-enforced file access
+│   │   └── audit_service.py       # High-level audit log writing
+│   ├── db/
+│   │   ├── schema.sql          # SQLite schema definition
+│   │   ├── connection.py       # DB connection factory
+│   │   ├── init_db.py          # Schema initialization + default rule seeding
+│   │   └── repositories.py     # Data access layer (parameterized SQL)
+│   ├── gui/
+│   │   ├── main_window.py      # Main window + navigation layout
+│   │   ├── theme.py            # Global QSS UI theme
+│   │   └── tabs/               # Feature-specific GUI tabs
+│   └── utils/
+│       └── file_utils.py       # Hashing, MIME, and secure path validation helpers
+├── requirements.txt            # Python dependencies
+└── README.md                   # Project documentation
+```
+
+## Security Notes
+
+- Encryption uses **AES-256-GCM** with random nonce generation per file and authentication tag verification.
+- Key material is derived with **PBKDF2-HMAC-SHA256** using a random salt and **600,000 iterations**.
+- **DLP checks are enforced before sharing**; blocked policies stop transfer and log the event.
+- Share access enforces **link expiration** at access time and denies expired tokens.
+- File path inputs are validated using absolute-path checks and base-directory boundary enforcement to mitigate path traversal.

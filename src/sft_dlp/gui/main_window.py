@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QHBoxLayout,
     QMainWindow,
@@ -23,6 +22,8 @@ from sft_dlp.gui.theme import MODERN_DARK_QSS
 
 
 class MainWindow(QMainWindow):
+    """Main desktop window with sidebar navigation across feature tabs."""
+
     def __init__(
         self,
         encryption_engine: FileEncryptionEngine,
@@ -31,6 +32,18 @@ class MainWindow(QMainWindow):
         dlp_rule_repository: DlpRuleRepository,
         audit_log_repository: AuditLogRepository,
     ) -> None:
+        """Build and wire the main application window.
+
+        Args:
+            encryption_engine: File encryption service.
+            sharing_service: Secure sharing service.
+            share_access_service: Share access/decryption service.
+            dlp_rule_repository: DLP rule repository for management tab.
+            audit_log_repository: Audit log repository for audit tab.
+
+        Returns:
+            None.
+        """
         super().__init__()
         self.setWindowTitle("Secure File Transfer & Data Leakage Prevention System")
         
@@ -102,6 +115,14 @@ class MainWindow(QMainWindow):
         self.switch_page(0)
 
     def switch_page(self, index: int) -> None:
+        """Switch active tab page and button selection state.
+
+        Args:
+            index: Target stacked-widget page index.
+
+        Returns:
+            None.
+        """
         self.stacked_widget.setCurrentIndex(index)
         for i, btn in enumerate(self.nav_buttons):
             btn.setChecked(i == index)

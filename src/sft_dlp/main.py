@@ -27,6 +27,14 @@ from sft_dlp.gui.main_window import MainWindow
 
 
 def build_app() -> QApplication:
+    """Build, wire, and run the Qt application.
+
+    Args:
+        None.
+
+    Returns:
+        Active QApplication instance.
+    """
     initialize_database(str(DEFAULT_DB_PATH))
 
     connection_factory = DatabaseConnectionFactory(DEFAULT_DB_PATH)
@@ -82,6 +90,14 @@ def build_app() -> QApplication:
 
 
 def main() -> None:
+    """CLI entry point for launching the desktop app.
+
+    Args:
+        None.
+
+    Returns:
+        None.
+    """
     build_app()
 
 

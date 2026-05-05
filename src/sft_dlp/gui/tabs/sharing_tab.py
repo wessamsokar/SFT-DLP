@@ -21,12 +21,24 @@ from sft_dlp.core.sharing_service import SecureSharingService
 
 
 class SharingTab(QWidget):
+    """GUI tab for share creation and share access operations."""
+
     def __init__(
         self,
         sharing_service: SecureSharingService,
         share_access_service: ShareAccessService,
         parent: QWidget | None = None,
     ) -> None:
+        """Initialize sharing/access widgets and dependencies.
+
+        Args:
+            sharing_service: Service used to create secure shares.
+            share_access_service: Service used to access existing shares.
+            parent: Optional Qt parent widget.
+
+        Returns:
+            None.
+        """
         super().__init__(parent)
         self._sharing_service = sharing_service
         self._share_access_service = share_access_service
@@ -52,6 +64,14 @@ class SharingTab(QWidget):
         self._build_ui()
 
     def _build_ui(self) -> None:
+        """Construct tab UI and button signal connections.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(50, 30, 50, 30)
         main_layout.setSpacing(18)
@@ -127,21 +147,53 @@ class SharingTab(QWidget):
         main_layout.addWidget(container, 1)
 
     def _browse_file(self) -> None:
+        """Open file picker for source file selection.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File to Share")
         if file_path:
             self._file_path_edit.setText(file_path)
 
     def _browse_output_dir(self) -> None:
+        """Open directory picker for encrypted output location.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         directory = QFileDialog.getExistingDirectory(self, "Select Output Directory")
         if directory:
             self._output_dir_edit.setText(directory)
 
     def _browse_access_output_dir(self) -> None:
+        """Open directory picker for decrypted output location.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         directory = QFileDialog.getExistingDirectory(self, "Select Decryption Output Directory")
         if directory:
             self._access_output_dir_edit.setText(directory)
 
     def _create_share(self) -> None:
+        """Create a secure share after validating mandatory fields.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         file_path = self._file_path_edit.text().strip()
         output_dir = self._output_dir_edit.text().strip()
         recipient_email = self._recipient_email_edit.text().strip()
@@ -183,6 +235,14 @@ class SharingTab(QWidget):
             QMessageBox.critical(self, "Share Error", str(exc))
 
     def _access_share(self) -> None:
+        """Access an existing share token/link and decrypt content.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         token_or_link = self._share_token_edit.text().strip()
         output_dir = self._access_output_dir_edit.text().strip() or str(Path("data") / "decrypted")
         actor = self._access_actor_edit.text().strip() or "operator"

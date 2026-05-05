@@ -17,7 +17,18 @@ from sft_dlp.db.repositories import AuditLogRepository
 
 
 class AuditLogsTab(QWidget):
+    """GUI tab for viewing recent system audit events."""
+
     def __init__(self, audit_log_repository: AuditLogRepository, parent: QWidget | None = None) -> None:
+        """Initialize audit log viewer widgets.
+
+        Args:
+            audit_log_repository: Repository used to fetch logs.
+            parent: Optional Qt parent widget.
+
+        Returns:
+            None.
+        """
         super().__init__(parent)
         self._audit_log_repository = audit_log_repository
 
@@ -32,6 +43,14 @@ class AuditLogsTab(QWidget):
         self.refresh_logs()
 
     def _build_ui(self) -> None:
+        """Build audit tab layout and controls.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         layout = QVBoxLayout(self)
         layout.setContentsMargins(50, 30, 50, 30)
         layout.setSpacing(14)
@@ -45,6 +64,14 @@ class AuditLogsTab(QWidget):
         layout.addWidget(self._table)
 
     def refresh_logs(self) -> None:
+        """Reload recent audit logs into table view.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         logs = self._audit_log_repository.get_recent_logs(limit=300)
         self._table.setRowCount(len(logs))
 
@@ -71,6 +98,16 @@ class AuditLogsTab(QWidget):
             self._table.setItem(row_idx, 5, message_item)
 
     def _build_status_badge(self, status: str, event_type: str, message: str) -> QWidget:
+        """Create visual badge widget based on status severity.
+
+        Args:
+            status: Stored status value.
+            event_type: Event type string.
+            message: Event message string.
+
+        Returns:
+            Badge container widget.
+        """
         label_text, background_color, text_color = self._status_badge_style(status, event_type, message)
 
         badge = QLabel(label_text)
@@ -95,6 +132,16 @@ class AuditLogsTab(QWidget):
         return container
 
     def _status_text_color(self, status: str, event_type: str, message: str) -> QColor:
+        """Determine message text color from derived status bucket.
+
+        Args:
+            status: Stored status value.
+            event_type: Event type string.
+            message: Event message string.
+
+        Returns:
+            QColor used for message cell text.
+        """
         label_text, _, _ = self._status_badge_style(status, event_type, message)
         if "SUCCESS" in label_text:
             return QColor("#4ade80")
@@ -106,6 +153,16 @@ class AuditLogsTab(QWidget):
 
     @staticmethod
     def _status_badge_style(status: str, event_type: str, message: str) -> tuple[str, str, str]:
+        """Map status text into badge label and color theme.
+
+        Args:
+            status: Stored status value.
+            event_type: Event type string.
+            message: Event message string.
+
+        Returns:
+            Tuple of label text, background color, and foreground color.
+        """
         normalized_status = status.strip().lower()
         combined_text = f"{event_type} {message}".lower()
 

@@ -19,7 +19,18 @@ from sft_dlp.db.repositories import DlpRuleRepository
 
 
 class DlpRulesTab(QWidget):
+    """GUI tab for creating and viewing active DLP rules."""
+
     def __init__(self, dlp_rule_repository: DlpRuleRepository, parent: QWidget | None = None) -> None:
+        """Initialize DLP rule management widgets.
+
+        Args:
+            dlp_rule_repository: Repository for rule CRUD operations.
+            parent: Optional Qt parent widget.
+
+        Returns:
+            None.
+        """
         super().__init__(parent)
         self._dlp_rule_repository = dlp_rule_repository
 
@@ -41,6 +52,14 @@ class DlpRulesTab(QWidget):
         self._refresh_rules()
 
     def _build_ui(self) -> None:
+        """Build DLP tab layout and wire interactions.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(50, 30, 50, 30)
         outer_layout.setSpacing(18)
@@ -87,6 +106,14 @@ class DlpRulesTab(QWidget):
         outer_layout.addWidget(self._table)
 
     def _create_rule(self) -> None:
+        """Validate form inputs and create a new DLP rule.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         rule_name = self._name_edit.text().strip()
         expression = self._expression_edit.text().strip()
 
@@ -111,6 +138,14 @@ class DlpRulesTab(QWidget):
             QMessageBox.critical(self, "Rule Error", str(exc))
 
     def _refresh_rules(self) -> None:
+        """Reload enabled DLP rules into the table view.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         rules = self._dlp_rule_repository.get_enabled_rules()
         self._table.setRowCount(len(rules))
 

@@ -5,14 +5,25 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from sft_dlp.config import BASE_DIR
 from sft_dlp.core.audit_service import AuditService
 from sft_dlp.core.dlp_engine import DlpPolicyEngine
 from sft_dlp.core.encryption_engine import FileEncryptionEngine
 from sft_dlp.db.repositories import RecipientRepository, ShareRepository
+from sft_dlp.utils.file_utils import validate_path_within_base
 
 
 @dataclass
 class ShareResult:
+    """Result payload for newly created secure share links.
+
+    Attributes:
+        share_id: Share record identifier.
+        share_link: Generated link carrying secure token.
+        expires_at: Expiration timestamp string in UTC.
+        file_id: Related encrypted file identifier.
+    """
+
     share_id: int
     share_link: str
     expires_at: str
@@ -47,6 +58,22 @@ class SecureSharingService:
         expires_in_hours: int,
         actor: str,
     ) -> ShareResult:
+        """Create an encrypted share after DLP and recipient policy checks.
+
+        Args:
+            file_path: Source file requested for sharing.
+            output_dir: Destination directory for encrypted file output.
+            recipient_name: Display name for recipient.
+            recipient_email: Recipient email used for policy checks.
+            recipient_authorized: Trust status for recipient.
+            expires_in_hours: Link validity duration in hours.
+            actor: User identifier used in audit logs.
+
+        Returns:
+            Share creation result containing tokenized link metadata.
+        """
+        file_path = validate_path_within_base(file_path, base_dir=BASE_DIR)
+        output_dir = validate_path_within_base(output_dir, base_dir=BASE_DIR)
         recipient = self._recipient_repository.upsert_recipient(
             name=recipient_name,
             email=recipient_email,

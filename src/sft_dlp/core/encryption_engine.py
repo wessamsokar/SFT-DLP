@@ -7,10 +7,15 @@ from pathlib import Path
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
+from sft_dlp.config import BASE_DIR
 from sft_dlp.core.audit_service import AuditService
 from sft_dlp.core.key_manager import OpenSSLKeyManager
 from sft_dlp.db.repositories import FileRepository
-from sft_dlp.utils.file_utils import compute_file_sha256, guess_mime_type
+from sft_dlp.utils.file_utils import (
+    compute_file_sha256,
+    guess_mime_type,
+    validate_path_within_base,
+)
 
 MAGIC_HEADER = b"SFTDLP1"
 NONCE_SIZE = 12
@@ -19,6 +24,14 @@ TAG_SIZE = 16
 
 @dataclass
 class EncryptionResult:
+    """Result payload returned after successful encryption.
+
+    Attributes:
+        file_id: Database id for encrypted file metadata.
+        encrypted_path: Path of encrypted output file.
+        key_id: Identifier of key used for encryption.
+    """
+
     file_id: int
     encrypted_path: Path
     key_id: str
@@ -43,8 +56,18 @@ class FileEncryptionEngine:
         output_dir: Path,
         actor: str = "operator",
     ) -> EncryptionResult:
-        input_path = input_path.resolve()
-        output_dir = output_dir.resolve()
+        """Encrypt a file with AES-256-GCM and persist metadata.
+
+        Args:
+            input_path: Source file path selected by user.
+            output_dir: Destination directory for encrypted payload.
+            actor: User identifier used in audit logs.
+
+        Returns:
+            Encryption result containing file id, output path, and key id.
+        """
+        input_path = validate_path_within_base(input_path, base_dir=BASE_DIR)
+        output_dir = validate_path_within_base(output_dir, base_dir=BASE_DIR)
         key_id: str | None = None
         encrypted_path: Path | None = None
 

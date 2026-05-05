@@ -17,7 +17,18 @@ from sft_dlp.core.encryption_engine import FileEncryptionEngine
 
 
 class EncryptionTab(QWidget):
+    """GUI tab for local AES-256-GCM file encryption."""
+
     def __init__(self, encryption_engine: FileEncryptionEngine, parent: QWidget | None = None) -> None:
+        """Initialize encryption tab widgets and state.
+
+        Args:
+            encryption_engine: Encryption service instance.
+            parent: Optional Qt parent widget.
+
+        Returns:
+            None.
+        """
         super().__init__(parent)
         self._encryption_engine = encryption_engine
 
@@ -29,6 +40,14 @@ class EncryptionTab(QWidget):
         self._build_ui()
 
     def _build_ui(self) -> None:
+        """Construct tab layout and signal bindings.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(50, 40, 50, 40)
         main_layout.setSpacing(20)
@@ -72,16 +91,40 @@ class EncryptionTab(QWidget):
         main_layout.addWidget(container, 1)
 
     def _browse_input_file(self) -> None:
+        """Open file picker and populate input path.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File to Encrypt")
         if file_path:
             self._input_path_edit.setText(file_path)
 
     def _browse_output_directory(self) -> None:
+        """Open directory picker and populate output path.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         directory = QFileDialog.getExistingDirectory(self, "Select Output Directory")
         if directory:
             self._output_path_edit.setText(directory)
 
     def _encrypt_file(self) -> None:
+        """Validate user input and run encryption workflow.
+
+        Args:
+            None.
+
+        Returns:
+            None.
+        """
         input_path = self._input_path_edit.text().strip()
         output_dir = self._output_path_edit.text().strip()
         actor = self._actor_edit.text().strip() or "operator"

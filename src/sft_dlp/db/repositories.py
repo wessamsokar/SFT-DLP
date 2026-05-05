@@ -10,12 +10,16 @@ from .connection import DatabaseConnectionFactory
 
 @dataclass
 class KeyRecord:
+    """Key metadata tuple used by encryption services."""
+
     key_id: str
     key_path: Path
 
 
 @dataclass
 class RecipientRecord:
+    """Recipient metadata tuple used by sharing/DLP services."""
+
     recipient_id: int
     name: str
     email: str
@@ -24,6 +28,8 @@ class RecipientRecord:
 
 @dataclass
 class DlpRuleRecord:
+    """Active DLP rule tuple loaded from persistence."""
+
     rule_id: int
     rule_name: str
     rule_type: str
@@ -35,6 +41,8 @@ class DlpRuleRecord:
 
 @dataclass
 class FileRecord:
+    """Encrypted file metadata tuple loaded from persistence."""
+
     file_id: int
     original_name: str
     encrypted_path: Path
@@ -43,6 +51,8 @@ class FileRecord:
 
 @dataclass
 class ShareRecord:
+    """Share metadata tuple loaded from persistence."""
+
     share_id: int
     share_token: str
     file_id: int
@@ -52,7 +62,17 @@ class ShareRecord:
 
 
 class AuditLogRepository:
+    """Persistence operations for audit log records."""
+
     def __init__(self, connection_factory: DatabaseConnectionFactory) -> None:
+        """Initialize repository with DB connection factory.
+
+        Args:
+            connection_factory: SQLite connection provider.
+
+        Returns:
+            None.
+        """
         self._connection_factory = connection_factory
 
     def log_event(
@@ -67,6 +87,21 @@ class AuditLogRepository:
         share_id: int | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
+        """Insert a new audit event row.
+
+        Args:
+            event_type: Normalized event identifier.
+            actor: User or service actor.
+            status: Event status value.
+            message: Human-readable event description.
+            file_id: Optional file id.
+            recipient_id: Optional recipient id.
+            share_id: Optional share id.
+            metadata: Optional metadata payload.
+
+        Returns:
+            None.
+        """
         metadata_json = json.dumps(metadata or {})
         with self._connection_factory.connect() as conn:
             conn.execute(
@@ -89,6 +124,14 @@ class AuditLogRepository:
             conn.commit()
 
     def get_recent_logs(self, limit: int = 200) -> list[dict[str, Any]]:
+        """Fetch recent audit logs sorted newest-first.
+
+        Args:
+            limit: Maximum number of rows.
+
+        Returns:
+            List of row dictionaries.
+        """
         with self._connection_factory.connect() as conn:
             rows = conn.execute(
                 """
@@ -103,10 +146,28 @@ class AuditLogRepository:
 
 
 class KeyStoreRepository:
+    """Persistence operations for encryption key metadata."""
+
     def __init__(self, connection_factory: DatabaseConnectionFactory) -> None:
+        """Initialize key store repository.
+
+        Args:
+            connection_factory: SQLite connection provider.
+
+        Returns:
+            None.
+        """
         self._connection_factory = connection_factory
 
     def get_active_key(self) -> KeyRecord | None:
+        """Return most recent active key record.
+
+        Args:
+            None.
+
+        Returns:
+            Active key record or None.
+        """
         with self._connection_factory.connect() as conn:
             row = conn.execute(
                 """
@@ -122,6 +183,14 @@ class KeyStoreRepository:
         return KeyRecord(key_id=row["key_id"], key_path=Path(row["key_path"]))
 
     def get_key_by_id(self, key_id: str) -> KeyRecord | None:
+        """Return key record by key id.
+
+        Args:
+            key_id: Unique key identifier.
+
+        Returns:
+            Matching key record or None.
+        """
         with self._connection_factory.connect() as conn:
             row = conn.execute(
                 """
@@ -145,6 +214,18 @@ class KeyStoreRepository:
         fingerprint: str,
         is_active: bool,
     ) -> None:
+        """Insert new key metadata and optionally rotate previous active key.
+
+        Args:
+            key_id: Generated key identifier.
+            key_label: Human-readable key label.
+            key_path: Filesystem path of key bytes.
+            fingerprint: SHA-256 fingerprint.
+            is_active: Whether key should be active.
+
+        Returns:
+            None.
+        """
         with self._connection_factory.connect() as conn:
             if is_active:
                 conn.execute("UPDATE key_store SET is_active = 0, rotated_at = datetime('now') WHERE is_active = 1")
@@ -159,7 +240,17 @@ class KeyStoreRepository:
 
 
 class FileRepository:
+    """Persistence operations for encrypted file metadata."""
+
     def __init__(self, connection_factory: DatabaseConnectionFactory) -> None:
+        """Initialize file repository.
+
+        Args:
+            connection_factory: SQLite connection provider.
+
+        Returns:
+            None.
+        """
         self._connection_factory = connection_factory
 
     def insert_encrypted_file(
@@ -175,6 +266,22 @@ class FileRepository:
         tag_b64: str,
         status: str,
     ) -> int:
+        """Insert encrypted file metadata row.
+
+        Args:
+            original_path: Original source path.
+            mime_type: MIME type string.
+            file_size_bytes: Original file size.
+            file_sha256: SHA-256 hash of plaintext.
+            encrypted_path: Encrypted payload path.
+            encryption_key_id: Key id used for encryption.
+            nonce_b64: Base64-encoded GCM nonce.
+            tag_b64: Base64-encoded GCM authentication tag.
+            status: File processing status.
+
+        Returns:
+            Inserted file row id.
+        """
         with self._connection_factory.connect() as conn:
             cursor = conn.execute(
                 """
@@ -209,6 +316,14 @@ class FileRepository:
             return int(cursor.lastrowid)
 
     def get_file_by_id(self, file_id: int) -> FileRecord | None:
+        """Fetch file metadata by id.
+
+        Args:
+            file_id: File identifier.
+
+        Returns:
+            File record or None.
+        """
         with self._connection_factory.connect() as conn:
             row = conn.execute(
                 """
@@ -230,10 +345,30 @@ class FileRepository:
 
 
 class RecipientRepository:
+    """Persistence operations for share recipients."""
+
     def __init__(self, connection_factory: DatabaseConnectionFactory) -> None:
+        """Initialize recipient repository.
+
+        Args:
+            connection_factory: SQLite connection provider.
+
+        Returns:
+            None.
+        """
         self._connection_factory = connection_factory
 
     def upsert_recipient(self, *, name: str, email: str, is_authorized: bool) -> RecipientRecord:
+        """Insert or update recipient by email.
+
+        Args:
+            name: Recipient display name.
+            email: Recipient email address.
+            is_authorized: Recipient authorization flag.
+
+        Returns:
+            Upserted recipient record.
+        """
         normalized_email = email.strip().lower()
         normalized_name = name.strip() or normalized_email
         with self._connection_factory.connect() as conn:
@@ -265,6 +400,14 @@ class RecipientRepository:
         )
 
     def get_by_email(self, email: str) -> RecipientRecord | None:
+        """Get recipient by normalized email.
+
+        Args:
+            email: Recipient email address.
+
+        Returns:
+            Recipient record or None.
+        """
         normalized_email = email.strip().lower()
         with self._connection_factory.connect() as conn:
             row = conn.execute(
@@ -286,10 +429,28 @@ class RecipientRepository:
 
 
 class DlpRuleRepository:
+    """Persistence operations for DLP rule management."""
+
     def __init__(self, connection_factory: DatabaseConnectionFactory) -> None:
+        """Initialize DLP rule repository.
+
+        Args:
+            connection_factory: SQLite connection provider.
+
+        Returns:
+            None.
+        """
         self._connection_factory = connection_factory
 
     def get_enabled_rules(self) -> list[DlpRuleRecord]:
+        """Load all enabled DLP rules in insertion order.
+
+        Args:
+            None.
+
+        Returns:
+            List of enabled DLP rule records.
+        """
         with self._connection_factory.connect() as conn:
             rows = conn.execute(
                 """
@@ -322,6 +483,19 @@ class DlpRuleRepository:
         severity: str,
         enabled: bool,
     ) -> None:
+        """Create a new DLP rule.
+
+        Args:
+            rule_name: Unique rule name.
+            rule_type: Rule kind (`pattern`, `file_type`, `recipient`).
+            match_expression: Rule match expression.
+            action: Rule action (`allow`, `warn`, `block`).
+            severity: Rule severity.
+            enabled: Whether rule is active.
+
+        Returns:
+            None.
+        """
         with self._connection_factory.connect() as conn:
             conn.execute(
                 """
@@ -348,7 +522,17 @@ class DlpRuleRepository:
 
 
 class DlpEventRepository:
+    """Persistence operations for DLP evaluation events."""
+
     def __init__(self, connection_factory: DatabaseConnectionFactory) -> None:
+        """Initialize DLP event repository.
+
+        Args:
+            connection_factory: SQLite connection provider.
+
+        Returns:
+            None.
+        """
         self._connection_factory = connection_factory
 
     def record_event(
@@ -360,6 +544,18 @@ class DlpEventRepository:
         matched_text: str,
         decision: str,
     ) -> None:
+        """Insert DLP rule hit event.
+
+        Args:
+            file_id: Optional related file id.
+            recipient_id: Optional related recipient id.
+            rule_id: Matched rule id.
+            matched_text: Matched excerpt.
+            decision: Rule decision.
+
+        Returns:
+            None.
+        """
         with self._connection_factory.connect() as conn:
             conn.execute(
                 """
@@ -372,7 +568,17 @@ class DlpEventRepository:
 
 
 class ShareRepository:
+    """Persistence operations for secure share links."""
+
     def __init__(self, connection_factory: DatabaseConnectionFactory) -> None:
+        """Initialize share repository.
+
+        Args:
+            connection_factory: SQLite connection provider.
+
+        Returns:
+            None.
+        """
         self._connection_factory = connection_factory
 
     def create_share(
@@ -384,6 +590,18 @@ class ShareRepository:
         created_by: str,
         expires_at: str,
     ) -> int:
+        """Insert new share record.
+
+        Args:
+            share_token: Random share token.
+            file_id: Related encrypted file id.
+            recipient_id: Optional recipient id.
+            created_by: Actor creating the share.
+            expires_at: Expiration timestamp string.
+
+        Returns:
+            Inserted share id.
+        """
         with self._connection_factory.connect() as conn:
             cursor = conn.execute(
                 """
@@ -396,6 +614,14 @@ class ShareRepository:
             return int(cursor.lastrowid)
 
     def get_by_token(self, share_token: str) -> ShareRecord | None:
+        """Fetch share record by token.
+
+        Args:
+            share_token: Share token value.
+
+        Returns:
+            Share record or None.
+        """
         with self._connection_factory.connect() as conn:
             row = conn.execute(
                 """
@@ -418,6 +644,14 @@ class ShareRepository:
         )
 
     def mark_accessed(self, share_id: int) -> None:
+        """Update share access timestamp.
+
+        Args:
+            share_id: Share identifier.
+
+        Returns:
+            None.
+        """
         with self._connection_factory.connect() as conn:
             conn.execute(
                 """

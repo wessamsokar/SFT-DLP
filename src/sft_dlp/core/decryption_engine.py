@@ -5,14 +5,23 @@ from pathlib import Path
 
 from Crypto.Cipher import AES
 
+from sft_dlp.config import BASE_DIR
 from sft_dlp.core.audit_service import AuditService
 from sft_dlp.core.encryption_engine import MAGIC_HEADER, NONCE_SIZE, TAG_SIZE
 from sft_dlp.core.key_manager import OpenSSLKeyManager
 from sft_dlp.db.repositories import FileRepository
+from sft_dlp.utils.file_utils import validate_path_within_base
 
 
 @dataclass
 class DecryptionResult:
+    """Result payload returned after successful decryption.
+
+    Attributes:
+        file_id: Database id for encrypted file metadata.
+        decrypted_path: Path of generated plaintext file.
+    """
+
     file_id: int
     decrypted_path: Path
 
@@ -37,6 +46,16 @@ class FileDecryptionEngine:
         output_dir: Path,
         actor: str,
     ) -> DecryptionResult:
+        """Decrypt an encrypted payload for an authorized access request.
+
+        Args:
+            file_id: Database identifier of encrypted file.
+            output_dir: Directory where plaintext should be written.
+            actor: User identifier used in audit logs.
+
+        Returns:
+            Decryption result containing file id and plaintext output path.
+        """
         encrypted_path: Path | None = None
         key_id: str | None = None
 
@@ -74,7 +93,7 @@ class FileDecryptionEngine:
             cipher = AES.new(key_bytes, AES.MODE_GCM, nonce=nonce)
             plaintext = cipher.decrypt_and_verify(ciphertext, tag)
 
-            output_dir = output_dir.resolve()
+            output_dir = validate_path_within_base(output_dir, base_dir=BASE_DIR)
             output_dir.mkdir(parents=True, exist_ok=True)
             decrypted_path = output_dir / f"{file_record.original_name}.decrypted"
             decrypted_path.write_bytes(plaintext)
