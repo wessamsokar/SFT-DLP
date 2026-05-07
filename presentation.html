@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFT-DLP Presentation</title>
+    <!-- Reveal.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <!-- Using a modern dark theme suitable for cybersecurity -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css" id="theme">
+    <style>
+        .reveal h1, .reveal h2, .reveal h3 {
+            color: #00FF41; /* Neon green accent */
+            text-transform: uppercase;
+        }
+        .reveal p, .reveal li {
+            color: #f4f4f5;
+            font-size: 0.9em;
+        }
+        .highlight { color: #8b5cf6; font-weight: bold; }
+        .success { color: #00FF41; }
+        .danger { color: #ef4444; }
+        .box {
+            border: 2px solid #00FF41;
+            padding: 20px;
+            border-radius: 10px;
+            background: rgba(0, 255, 65, 0.05);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Slide 1: Title -->
+            <section>
+                <h1>SFT-DLP</h1>
+                <h3>Secure File Transfer & Data Leakage Prevention</h3>
+                <p>A Comprehensive Cybersecurity Solution</p>
+                <p><small>Created for Cryptography Project</small></p>
+            </section>
+
+            <!-- Slide 2: Introduction -->
+            <section>
+                <h2>1. Introduction</h2>
+                <p>SFT-DLP is a local-first desktop application designed to secure sensitive file transfers.</p>
+                <ul>
+                    <li class="fragment">Strong Encryption (AES-256-GCM)</li>
+                    <li class="fragment">Automated Policy Enforcement (DLP)</li>
+                    <li class="fragment">Auditable Sharing Workflows</li>
+                </ul>
+            </section>
+
+            <!-- Slide 3: The Problem -->
+            <section>
+                <h2>2. The Problem</h2>
+                <div class="box">
+                    <p class="danger">Data Leaks & Insecure Sharing</p>
+                    <ul>
+                        <li>Employees accidentally sharing sensitive files (credit cards, IDs).</li>
+                        <li>Unencrypted data transfers leading to interception.</li>
+                        <li>No trace or audit of who shared what, and when.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Slide 4: The Solution -->
+            <section>
+                <h2>3. The Solution</h2>
+                <p>SFT-DLP combines three pillars of security:</p>
+                <ol>
+                    <li class="fragment"><span class="highlight">Cryptography:</span> Bulletproof encryption.</li>
+                    <li class="fragment"><span class="highlight">Policy Controls:</span> Real-time content scanning.</li>
+                    <li class="fragment"><span class="highlight">Monitoring:</span> Immutable audit logs.</li>
+                </ol>
+            </section>
+
+            <!-- Slide 5: Cryptography Engine -->
+            <section>
+                <h2>4. Encryption Engine</h2>
+                <p>Ensuring data confidentiality and integrity.</p>
+                <ul>
+                    <li><strong>Algorithm:</strong> AES-256-GCM (Authenticated Encryption)</li>
+                    <li><strong>Key Derivation:</strong> PBKDF2-HMAC-SHA256</li>
+                    <li><strong>Iterations:</strong> 600,000 (Protection against brute-force)</li>
+                    <li>Protects against tampering during transfer.</li>
+                </ul>
+            </section>
+
+            <!-- Slide 6: Data Leakage Prevention -->
+            <section>
+                <h2>5. DLP Engine</h2>
+                <p>The core firewall for your files.</p>
+                <div class="box">
+                    <ul>
+                        <li>Scans files <strong>before</strong> they are allowed to be shared.</li>
+                        <li>Uses regular expressions to find sensitive IDs, Credit Cards.</li>
+                        <li>Blocks unauthorized file extensions entirely.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Slide 7: Secure Sharing -->
+            <section>
+                <h2>6. Secure Local Sharing</h2>
+                <p>How files move safely.</p>
+                <ul>
+                    <li class="fragment">Generates a unique, secure access token.</li>
+                    <li class="fragment">Enforces <span class="danger">expiration times</span> on all shared links.</li>
+                    <li class="fragment">Recipient must present token before the time limit expires.</li>
+                </ul>
+            </section>
+
+            <!-- Slide 8: Audit Logging -->
+            <section>
+                <h2>7. Audit & Monitoring</h2>
+                <p>Complete visibility into system usage.</p>
+                <ul>
+                    <li>Logs every encryption, decryption, and sharing attempt.</li>
+                    <li>Records DLP interventions (Blocks & Warnings).</li>
+                    <li>Stored securely in a local SQLite database.</li>
+                    <li>Real-time dashboard for administrators.</li>
+                </ul>
+            </section>
+
+            <!-- Slide 9: Workflow Diagram -->
+            <section>
+                <h2>8. System Workflow</h2>
+                <p>A typical secure transfer process:</p>
+                <ol>
+                    <li>User selects a file to share.</li>
+                    <li><span class="highlight">DLP Engine</span> scans the file contents.</li>
+                    <li>If safe, <span class="success">Encryption Engine</span> secures it.</li>
+                    <li>A secure token is generated and given to recipient.</li>
+                    <li>Action is recorded in the Audit Logs.</li>
+                </ol>
+            </section>
+
+            <!-- Slide 10: Security Model Details -->
+            <section>
+                <h2>9. Technical Security Model</h2>
+                <ul>
+                    <li><strong>Path Traversal Protection:</strong> Prevents unauthorized directory access.</li>
+                    <li><strong>Unique Nonces:</strong> AES-GCM uses a random nonce per file to prevent replay attacks.</li>
+                    <li><strong>Authentication Tags:</strong> Verifies file hasn't been altered.</li>
+                </ul>
+            </section>
+
+            <!-- Slide 11: Application Architecture -->
+            <section>
+                <h2>10. UI & Architecture</h2>
+                <p>Built with <strong>Python & PyQt5</strong></p>
+                <ul>
+                    <li>Modern, responsive Cyber-Security Dashboard interface.</li>
+                    <li>Modular structure (Core Engines, Database layer, GUI layer).</li>
+                    <li>Local-first design ensures no data leaves the user's control.</li>
+                </ul>
+            </section>
+
+            <!-- Slide 12: Conclusion -->
+            <section>
+                <h2>11. Conclusion</h2>
+                <div class="box">
+                    <h3 class="success">Mission Accomplished</h3>
+                    <p>SFT-DLP successfully demonstrates how to integrate strong cryptography with practical business rules (DLP) to create a robust, auditable file transfer system.</p>
+                </div>
+            </section>
+
+            <!-- Slide 13: End -->
+            <section>
+                <h1>Thank You</h1>
+                <p>Questions?</p>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Reveal.js Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script>
+        // Initialize the Reveal presentation
+        Reveal.initialize({
+            controls: true,
+            progress: true,
+            center: true,
+            hash: true,
+            transition: 'slide', // none/fade/slide/convex/concave/zoom
+            // Auto-slide every 10 seconds if needed:
+            // autoSlide: 10000 
+        });
+    </script>
+</body>
+</html>
