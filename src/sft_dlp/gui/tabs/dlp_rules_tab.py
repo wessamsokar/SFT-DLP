@@ -194,19 +194,12 @@ class DlpRulesTab(QWidget):
             return
 
         try:
-            result = self._dlp_rule_repository.delete_rule(rule_id)
-            if result == "not_found":
+            deleted = self._dlp_rule_repository.delete_rule(rule_id)
+            if not deleted:
                 QMessageBox.warning(self, "Not Found", "The selected rule no longer exists.")
                 self._refresh_rules()
                 return
             self._refresh_rules()
-            if result == "deactivated":
-                QMessageBox.information(
-                    self,
-                    "Rule Disabled",
-                    "Rule is referenced by past events, so it was disabled instead of deleted.",
-                )
-                return
             QMessageBox.information(self, "Rule Deleted", "Selected rule deleted successfully.")
         except Exception as exc:
             QMessageBox.critical(self, "Delete Error", str(exc))

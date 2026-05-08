@@ -498,54 +498,49 @@ class DlpRuleRepository:
             None.
         """
         with self._connection_factory.connect() as conn:
-            conn.execute(
-                """
-                INSERT INTO dlp_rules (
-                    rule_name,
-                    rule_type,
-                    match_expression,
-                    action,
-                    severity,
-                    enabled,
-                    updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-                """,
-                (
-                    rule_name,
-                    rule_type,
-                    match_expression,
-                    action,
-                    severity,
-                    1 if enabled else 0,
-                ),
-            )
-            conn.commit()
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO dlp_rules (
+                        rule_name,
+                        rule_type,
+                        match_expression,
+                        action,
+                        severity,
+                        enabled,
+                        updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+                    """,
+                    (
+                        rule_name,
+                        rule_type,
+                        match_expression,
+                        action,
+                        severity,
+                        1 if enabled else 0,
+                    ),
+                )
+                conn.commit()
+            except sqlite3.IntegrityError as exc:
+                if "dlp_rules.rule_name" in str(exc):
+                    raise ValueError(f"A DLP rule named '{rule_name}' already exists.") from exc
+                raise
 
-    def delete_rule(self, rule_id: int) -> str:
-        """Delete or deactivate a DLP rule by id.
+    def delete_rule(self, rule_id: int) -> bool:
+        """Delete a DLP rule by id and remove dependent DLP events.
 
         Args:
             rule_id: Rule identifier to remove.
 
         Returns:
-            One of: `deleted`, `deactivated`, or `not_found`.
+            True when a rule row is deleted, False when no row matches.
         """
         with self._connection_factory.connect() as conn:
-            try:
-                cursor = conn.execute("DELETE FROM dlp_rules WHERE id = ?", (rule_id,))
-                conn.commit()
-                return "deleted" if cursor.rowcount > 0 else "not_found"
-            except sqlite3.IntegrityError:
-                cursor = conn.execute(
-                    """
-                    UPDATE dlp_rules
-                    SET enabled = 0, updated_at = datetime('now')
-                    WHERE id = ? AND enabled = 1
-                    """,
-                    (rule_id,),
-                )
-                conn.commit()
-                return "deactivated" if cursor.rowcount > 0 else "not_found"
+            # Remove dependent history rows first to satisfy FK constraints.
+            conn.execute("DELETE FROM dlp_events WHERE rule_id = ?", (rule_id,))
+            cursor = conn.execute("DELETE FROM dlp_rules WHERE id = ?", (rule_id,))
+            conn.commit()
+            return cursor.rowcount > 0
 
 
 class DlpEventRepository:
