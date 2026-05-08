@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -520,19 +521,31 @@ class DlpRuleRepository:
             )
             conn.commit()
 
-    def delete_rule(self, rule_id: int) -> bool:
-        """Delete a DLP rule by id.
+    def delete_rule(self, rule_id: int) -> str:
+        """Delete or deactivate a DLP rule by id.
 
         Args:
             rule_id: Rule identifier to remove.
 
         Returns:
-            True when a rule row is deleted, False when no row matches.
+            One of: `deleted`, `deactivated`, or `not_found`.
         """
         with self._connection_factory.connect() as conn:
-            cursor = conn.execute("DELETE FROM dlp_rules WHERE id = ?", (rule_id,))
-            conn.commit()
-            return cursor.rowcount > 0
+            try:
+                cursor = conn.execute("DELETE FROM dlp_rules WHERE id = ?", (rule_id,))
+                conn.commit()
+                return "deleted" if cursor.rowcount > 0 else "not_found"
+            except sqlite3.IntegrityError:
+                cursor = conn.execute(
+                    """
+                    UPDATE dlp_rules
+                    SET enabled = 0, updated_at = datetime('now')
+                    WHERE id = ? AND enabled = 1
+                    """,
+                    (rule_id,),
+                )
+                conn.commit()
+                return "deactivated" if cursor.rowcount > 0 else "not_found"
 
 
 class DlpEventRepository:

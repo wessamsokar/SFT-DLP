@@ -50,6 +50,7 @@ class DlpRulesTab(QWidget):
             ["ID", "Name", "Type", "Expression", "Action", "Severity"]
         )
         self._table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self._table.verticalHeader().setVisible(False)
         self._table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._table.setSelectionMode(QAbstractItemView.SingleSelection)
         self._table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -193,12 +194,19 @@ class DlpRulesTab(QWidget):
             return
 
         try:
-            deleted = self._dlp_rule_repository.delete_rule(rule_id)
-            if not deleted:
+            result = self._dlp_rule_repository.delete_rule(rule_id)
+            if result == "not_found":
                 QMessageBox.warning(self, "Not Found", "The selected rule no longer exists.")
                 self._refresh_rules()
                 return
             self._refresh_rules()
+            if result == "deactivated":
+                QMessageBox.information(
+                    self,
+                    "Rule Disabled",
+                    "Rule is referenced by past events, so it was disabled instead of deleted.",
+                )
+                return
             QMessageBox.information(self, "Rule Deleted", "Selected rule deleted successfully.")
         except Exception as exc:
             QMessageBox.critical(self, "Delete Error", str(exc))

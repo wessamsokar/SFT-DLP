@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QShowEvent
 from PyQt5.QtWidgets import (
     QHBoxLayout,
     QPushButton,
@@ -112,6 +113,11 @@ class AuditLogsTab(QWidget):
             message_item.setForeground(self._status_text_color(status, event_type, message))
             self._table.setItem(row_idx, 5, message_item)
             self._table.setRowHeight(row_idx, 34)
+
+    def showEvent(self, event: QShowEvent) -> None:
+        """Refresh logs whenever the audit tab becomes visible."""
+        super().showEvent(event)
+        self.refresh_logs()
 
     def _status_text_color(self, status: str, event_type: str, message: str) -> QColor:
         """Determine message text color from derived status bucket.
