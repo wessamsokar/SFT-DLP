@@ -20,20 +20,18 @@ from sft_dlp.core.share_access_service import ShareAccessService
 from sft_dlp.core.sharing_service import SecureSharingService
 
 
-class SharingTab(QWidget):
-    """GUI tab for share creation and share access operations."""
+class CreateShareTab(QWidget):
+    """GUI tab for secure share creation only."""
 
     def __init__(
         self,
         sharing_service: SecureSharingService,
-        share_access_service: ShareAccessService,
         parent: QWidget | None = None,
     ) -> None:
-        """Initialize sharing/access widgets and dependencies.
+        """Initialize share-creation widgets and dependencies.
 
         Args:
             sharing_service: Service used to create secure shares.
-            share_access_service: Service used to access existing shares.
             parent: Optional Qt parent widget.
 
         Returns:
@@ -41,21 +39,21 @@ class SharingTab(QWidget):
         """
         super().__init__(parent)
         self._sharing_service = sharing_service
-        self._share_access_service = share_access_service
 
         self._file_path_edit = QLineEdit()
+        self._file_path_edit.setPlaceholderText("Select source file to share...")
         self._output_dir_edit = QLineEdit(str(Path("data") / "encrypted"))
+        self._output_dir_edit.setPlaceholderText("Encrypted output directory")
         self._recipient_name_edit = QLineEdit()
+        self._recipient_name_edit.setPlaceholderText("Recipient full name")
         self._recipient_email_edit = QLineEdit()
+        self._recipient_email_edit.setPlaceholderText("recipient@example.com")
         self._recipient_authorized_checkbox = QCheckBox("Recipient is authorized")
         self._expires_hours_spin = QSpinBox()
         self._expires_hours_spin.setRange(1, 720)
         self._expires_hours_spin.setValue(24)
         self._actor_edit = QLineEdit("operator")
-
-        self._share_token_edit = QLineEdit()
-        self._access_output_dir_edit = QLineEdit(str(Path("data") / "decrypted"))
-        self._access_actor_edit = QLineEdit("operator")
+        self._actor_edit.setPlaceholderText("Share creator actor")
 
         self._result_text = QTextEdit()
         self._result_text.setReadOnly(True)
@@ -78,17 +76,16 @@ class SharingTab(QWidget):
 
         container = QWidget()
         container.setObjectName("panel")
-        container.setStyleSheet("QWidget#panel { background-color: #181818; border-radius: 12px; border: 1px solid #2d2d2d; }")
         
         layout = QGridLayout(container)
         layout.setContentsMargins(36, 28, 36, 28)
         layout.setSpacing(14)
         layout.setColumnStretch(1, 1)
-        layout.setRowStretch(9, 1)
+        layout.setRowStretch(10, 1)
 
-        title1 = QLabel("Create Share Link")
-        title1.setStyleSheet("font-size: 21px; font-weight: bold; color: #ffffff;")
-        layout.addWidget(title1, 0, 0, 1, 3)
+        title = QLabel("Create Share Link")
+        title.setStyleSheet("font-size: 21px; font-weight: bold; color: #ffffff;")
+        layout.addWidget(title, 0, 0, 1, 3)
 
         layout.addWidget(QLabel("Source File"), 1, 0)
         layout.addWidget(self._file_path_edit, 1, 1)
@@ -123,26 +120,6 @@ class SharingTab(QWidget):
 
         layout.addWidget(QLabel("Result"), 9, 0)
         layout.addWidget(self._result_text, 9, 1, 1, 2)
-
-        title2 = QLabel("Access Share")
-        title2.setStyleSheet("font-size: 21px; font-weight: bold; color: #ffffff; margin-top: 18px;")
-        layout.addWidget(title2, 10, 0, 1, 3)
-
-        layout.addWidget(QLabel("Share Token / Link"), 11, 0)
-        layout.addWidget(self._share_token_edit, 11, 1, 1, 2)
-
-        layout.addWidget(QLabel("Decryption Output Directory"), 12, 0)
-        layout.addWidget(self._access_output_dir_edit, 12, 1)
-        browse_access_dir_button = QPushButton("Browse...")
-        browse_access_dir_button.clicked.connect(self._browse_access_output_dir)
-        layout.addWidget(browse_access_dir_button, 12, 2)
-
-        layout.addWidget(QLabel("Access Actor"), 13, 0)
-        layout.addWidget(self._access_actor_edit, 13, 1, 1, 2)
-
-        access_share_button = QPushButton("🔓 Access Shared File (Decrypt)")
-        access_share_button.clicked.connect(self._access_share)
-        layout.addWidget(access_share_button, 14, 0, 1, 3)
         
         main_layout.addWidget(container, 1)
 
@@ -171,19 +148,6 @@ class SharingTab(QWidget):
         directory = QFileDialog.getExistingDirectory(self, "Select Output Directory")
         if directory:
             self._output_dir_edit.setText(directory)
-
-    def _browse_access_output_dir(self) -> None:
-        """Open directory picker for decrypted output location.
-
-        Args:
-            None.
-
-        Returns:
-            None.
-        """
-        directory = QFileDialog.getExistingDirectory(self, "Select Decryption Output Directory")
-        if directory:
-            self._access_output_dir_edit.setText(directory)
 
     def _create_share(self) -> None:
         """Create a secure share after validating mandatory fields.
@@ -234,15 +198,87 @@ class SharingTab(QWidget):
         except Exception as exc:
             QMessageBox.critical(self, "Share Error", str(exc))
 
-    def _access_share(self) -> None:
-        """Access an existing share token/link and decrypt content.
+class AccessShareTab(QWidget):
+    """GUI tab for secure share access/decryption only."""
+
+    def __init__(
+        self,
+        share_access_service: ShareAccessService,
+        parent: QWidget | None = None,
+    ) -> None:
+        """Initialize share-access widgets and dependencies.
 
         Args:
-            None.
+            share_access_service: Service used to access existing shares.
+            parent: Optional Qt parent widget.
 
         Returns:
             None.
         """
+        super().__init__(parent)
+        self._share_access_service = share_access_service
+
+        self._share_token_edit = QLineEdit()
+        self._share_token_edit.setPlaceholderText("Paste share token or full share link...")
+        self._access_output_dir_edit = QLineEdit(str(Path("data") / "decrypted"))
+        self._access_output_dir_edit.setPlaceholderText("Decryption output directory")
+        self._access_actor_edit = QLineEdit("operator")
+        self._access_actor_edit.setPlaceholderText("Access actor")
+
+        self._result_text = QTextEdit()
+        self._result_text.setReadOnly(True)
+        self._result_text.setMinimumHeight(160)
+
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        """Construct access tab UI and button signal connections."""
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(50, 30, 50, 30)
+        main_layout.setSpacing(18)
+
+        container = QWidget()
+        container.setObjectName("panel")
+
+        layout = QGridLayout(container)
+        layout.setContentsMargins(36, 28, 36, 28)
+        layout.setSpacing(14)
+        layout.setColumnStretch(1, 1)
+        layout.setRowStretch(6, 1)
+
+        title = QLabel("Access Share")
+        title.setStyleSheet("font-size: 21px; font-weight: bold; color: #ffffff;")
+        layout.addWidget(title, 0, 0, 1, 3)
+
+        layout.addWidget(QLabel("Share Token / Link"), 1, 0)
+        layout.addWidget(self._share_token_edit, 1, 1, 1, 2)
+
+        layout.addWidget(QLabel("Decryption Output Directory"), 2, 0)
+        layout.addWidget(self._access_output_dir_edit, 2, 1)
+        browse_access_dir_button = QPushButton("Browse...")
+        browse_access_dir_button.clicked.connect(self._browse_access_output_dir)
+        layout.addWidget(browse_access_dir_button, 2, 2)
+
+        layout.addWidget(QLabel("Access Actor"), 3, 0)
+        layout.addWidget(self._access_actor_edit, 3, 1, 1, 2)
+
+        access_share_button = QPushButton("🔓 Access Shared File (Decrypt)")
+        access_share_button.clicked.connect(self._access_share)
+        layout.addWidget(access_share_button, 4, 0, 1, 3)
+
+        layout.addWidget(QLabel("Result"), 5, 0)
+        layout.addWidget(self._result_text, 5, 1, 1, 2)
+
+        main_layout.addWidget(container, 1)
+
+    def _browse_access_output_dir(self) -> None:
+        """Open directory picker for decrypted output location."""
+        directory = QFileDialog.getExistingDirectory(self, "Select Decryption Output Directory")
+        if directory:
+            self._access_output_dir_edit.setText(directory)
+
+    def _access_share(self) -> None:
+        """Access an existing share token/link and decrypt content."""
         token_or_link = self._share_token_edit.text().strip()
         output_dir = self._access_output_dir_edit.text().strip() or str(Path("data") / "decrypted")
         actor = self._access_actor_edit.text().strip() or "operator"
@@ -270,4 +306,37 @@ class SharingTab(QWidget):
         except PermissionError as exc:
             QMessageBox.warning(self, "Access Denied", str(exc))
         except Exception as exc:
-            QMessageBox.critical(self, "Access Error", str(exc))
+            QMessageBox.critical(self, "Access Error", self._humanize_access_error(exc))
+
+    @staticmethod
+    def _humanize_access_error(exc: Exception) -> str:
+        """Map low-level decryption/access exceptions to readable UI messages."""
+        error_text = str(exc).strip()
+        normalized = error_text.lower()
+
+        if "mac check failed" in normalized or "invalid encrypted file header" in normalized:
+            return (
+                "Unable to decrypt this share.\n"
+                "The encrypted content appears corrupted or was encrypted with a different key."
+            )
+        if "encrypted payload is too short" in normalized or "malformed" in normalized:
+            return "Encrypted file is incomplete or malformed."
+        if "encrypted file not found" in normalized:
+            return "Encrypted file was not found on disk. Please regenerate the share and try again."
+        if "encryption key not found" in normalized:
+            return "Required encryption key is missing. Restore the key store, then retry."
+        if "share content is still encrypted" in normalized:
+            return (
+                "This share was generated from an already encrypted file.\n"
+                "Create a new share from the original plaintext file, then decrypt again."
+            )
+        if "path traversal is not allowed" in normalized:
+            return "The selected output path is invalid."
+        if "already encrypted (.sftenc)" in normalized:
+            return (
+                "This file is already encrypted.\n"
+                "Please select the original plaintext file, not a .sftenc file."
+            )
+        if not error_text:
+            return "Unknown access error occurred."
+        return error_text

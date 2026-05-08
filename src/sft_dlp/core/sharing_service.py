@@ -5,12 +5,11 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from sft_dlp.config import BASE_DIR
 from sft_dlp.core.audit_service import AuditService
 from sft_dlp.core.dlp_engine import DlpPolicyEngine
-from sft_dlp.core.encryption_engine import FileEncryptionEngine
+from sft_dlp.core.encryption_engine import FileEncryptionEngine, MAGIC_HEADER
 from sft_dlp.db.repositories import RecipientRepository, ShareRepository
-from sft_dlp.utils.file_utils import validate_path_within_base
+from sft_dlp.utils.file_utils import normalize_user_path
 
 
 @dataclass
@@ -72,8 +71,13 @@ class SecureSharingService:
         Returns:
             Share creation result containing tokenized link metadata.
         """
-        file_path = validate_path_within_base(file_path, base_dir=BASE_DIR)
-        output_dir = validate_path_within_base(output_dir, base_dir=BASE_DIR)
+        file_path = normalize_user_path(file_path)
+        output_dir = normalize_user_path(output_dir)
+        if self._is_already_encrypted_file(file_path):
+            raise ValueError(
+                "Selected file is already encrypted (.sftenc). "
+                "Please choose the original plaintext file to create a share."
+            )
         recipient = self._recipient_repository.upsert_recipient(
             name=recipient_name,
             email=recipient_email,
@@ -137,3 +141,14 @@ class SecureSharingService:
             expires_at=expires_at,
             file_id=encryption_result.file_id,
         )
+
+    @staticmethod
+    def _is_already_encrypted_file(file_path: Path) -> bool:
+        """Return whether the selected file already matches app encrypted format."""
+        if file_path.suffix.lower() == ".sftenc":
+            return True
+        try:
+            with file_path.open("rb") as input_stream:
+                return input_stream.read(len(MAGIC_HEADER)) == MAGIC_HEADER
+        except OSError:
+            return False

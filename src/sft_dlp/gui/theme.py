@@ -14,6 +14,15 @@ QLabel {
     font-size: 17px;
 }
 
+QToolTip {
+    background-color: #262626;
+    color: #ffffff;
+    border: 1px solid #3a3a3a;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
 QLabel#appTitle {
     font-size: 24px;
     font-weight: 700;
@@ -73,6 +82,10 @@ QComboBox, QSpinBox {
     min-height: 38px;
 }
 
+QTextEdit {
+    line-height: 1.35;
+}
+
 QLineEdit:focus, QTextEdit:focus {
     border: 1px solid #4ade80;
     background-color: #242424;
@@ -104,6 +117,12 @@ QPushButton#danger_btn {
 
 QPushButton#danger_btn:hover {
     background-color: #b91c1c;
+}
+
+QWidget#panel {
+    background-color: #181818;
+    border-radius: 12px;
+    border: 1px solid #2d2d2d;
 }
 
 /* Tables */
@@ -139,6 +158,42 @@ QHeaderView {
     background-color: #222222;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
+}
+
+/* Dialogs and message popups */
+QMessageBox {
+    background-color: #1a1a1a;
+    border: 1px solid #2f2f2f;
+    border-radius: 10px;
+}
+
+QMessageBox QWidget {
+    background-color: #1a1a1a;
+}
+
+QMessageBox QLabel#qt_msgbox_label {
+    color: #f3f4f6;
+    font-size: 16px;
+    padding: 8px 8px 8px 8px;
+    min-width: 420px;
+    qproperty-wordWrap: true;
+    qproperty-alignment: 'AlignVCenter | AlignLeft';
+}
+
+QMessageBox QLabel#qt_msgboxex_icon_label {
+    background: transparent;
+    min-width: 48px;
+    max-width: 56px;
+    min-height: 42px;
+}
+
+QMessageBox QPushButton {
+    min-width: 108px;
+    min-height: 34px;
+    font-size: 15px;
+    border-radius: 8px;
+    padding: 6px 14px;
+    margin: 4px 2px 2px 2px;
 }
 
 QScrollBar:vertical {

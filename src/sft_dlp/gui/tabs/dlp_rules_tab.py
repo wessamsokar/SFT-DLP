@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PyQt5.QtWidgets import (
+    QAbstractItemView,
     QComboBox,
     QGridLayout,
     QHBoxLayout,
@@ -35,9 +36,11 @@ class DlpRulesTab(QWidget):
         self._dlp_rule_repository = dlp_rule_repository
 
         self._name_edit = QLineEdit()
+        self._name_edit.setPlaceholderText("Unique rule name")
         self._type_combo = QComboBox()
         self._type_combo.addItems(["pattern", "file_type", "recipient"])
         self._expression_edit = QLineEdit()
+        self._expression_edit.setPlaceholderText("Regex, file extension, or recipient pattern")
         self._action_combo = QComboBox()
         self._action_combo.addItems(["allow", "warn", "block"])
         self._severity_combo = QComboBox()
@@ -47,6 +50,10 @@ class DlpRulesTab(QWidget):
             ["ID", "Name", "Type", "Expression", "Action", "Severity"]
         )
         self._table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self._table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self._table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self._table.setAlternatingRowColors(True)
 
         self._build_ui()
         self._refresh_rules()
@@ -66,7 +73,6 @@ class DlpRulesTab(QWidget):
 
         container = QWidget()
         container.setObjectName("panel")
-        container.setStyleSheet("QWidget#panel { background-color: #181818; border-radius: 12px; border: 1px solid #2d2d2d; }")
         
         form_layout = QGridLayout(container)
         form_layout.setContentsMargins(30, 26, 30, 26)
@@ -98,8 +104,11 @@ class DlpRulesTab(QWidget):
         add_button.clicked.connect(self._create_rule)
         refresh_button = QPushButton("🔄 Refresh")
         refresh_button.clicked.connect(self._refresh_rules)
+        delete_button = QPushButton("🗑️ Delete Selected Rule")
+        delete_button.clicked.connect(self._delete_selected_rule)
         button_row.addWidget(add_button)
         button_row.addWidget(refresh_button)
+        button_row.addWidget(delete_button)
 
         outer_layout.addWidget(container)
         outer_layout.addLayout(button_row)
@@ -156,3 +165,40 @@ class DlpRulesTab(QWidget):
             self._table.setItem(row_index, 3, QTableWidgetItem(rule.match_expression))
             self._table.setItem(row_index, 4, QTableWidgetItem(rule.action))
             self._table.setItem(row_index, 5, QTableWidgetItem(rule.severity))
+
+    def _delete_selected_rule(self) -> None:
+        """Delete the currently selected rule row after confirmation."""
+        selected_row = self._table.currentRow()
+        if selected_row < 0:
+            QMessageBox.warning(self, "No Selection", "Select a rule to delete.")
+            return
+
+        rule_id_item = self._table.item(selected_row, 0)
+        rule_name_item = self._table.item(selected_row, 1)
+        if rule_id_item is None or rule_name_item is None:
+            QMessageBox.warning(self, "Selection Error", "Unable to read the selected rule.")
+            return
+
+        rule_id = int(rule_id_item.text())
+        rule_name = rule_name_item.text()
+
+        confirmation = QMessageBox.question(
+            self,
+            "Confirm Deletion",
+            f"Delete selected rule '{rule_name}' (ID: {rule_id})?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if confirmation != QMessageBox.Yes:
+            return
+
+        try:
+            deleted = self._dlp_rule_repository.delete_rule(rule_id)
+            if not deleted:
+                QMessageBox.warning(self, "Not Found", "The selected rule no longer exists.")
+                self._refresh_rules()
+                return
+            self._refresh_rules()
+            QMessageBox.information(self, "Rule Deleted", "Selected rule deleted successfully.")
+        except Exception as exc:
+            QMessageBox.critical(self, "Delete Error", str(exc))

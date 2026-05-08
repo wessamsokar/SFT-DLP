@@ -7,14 +7,13 @@ from pathlib import Path
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
-from sft_dlp.config import BASE_DIR
 from sft_dlp.core.audit_service import AuditService
 from sft_dlp.core.key_manager import OpenSSLKeyManager
 from sft_dlp.db.repositories import FileRepository
 from sft_dlp.utils.file_utils import (
     compute_file_sha256,
     guess_mime_type,
-    validate_path_within_base,
+    normalize_user_path,
 )
 
 MAGIC_HEADER = b"SFTDLP1"
@@ -66,8 +65,8 @@ class FileEncryptionEngine:
         Returns:
             Encryption result containing file id, output path, and key id.
         """
-        input_path = validate_path_within_base(input_path, base_dir=BASE_DIR)
-        output_dir = validate_path_within_base(output_dir, base_dir=BASE_DIR)
+        input_path = normalize_user_path(input_path)
+        output_dir = normalize_user_path(output_dir)
         key_id: str | None = None
         encrypted_path: Path | None = None
 

@@ -520,6 +520,20 @@ class DlpRuleRepository:
             )
             conn.commit()
 
+    def delete_rule(self, rule_id: int) -> bool:
+        """Delete a DLP rule by id.
+
+        Args:
+            rule_id: Rule identifier to remove.
+
+        Returns:
+            True when a rule row is deleted, False when no row matches.
+        """
+        with self._connection_factory.connect() as conn:
+            cursor = conn.execute("DELETE FROM dlp_rules WHERE id = ?", (rule_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+
 
 class DlpEventRepository:
     """Persistence operations for DLP evaluation events."""

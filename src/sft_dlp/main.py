@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import sys
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
 from sft_dlp.config import DEFAULT_DB_PATH, KEYS_DIR
@@ -24,17 +26,21 @@ from sft_dlp.db.repositories import (
     ShareRepository,
 )
 from sft_dlp.gui.main_window import MainWindow
+from sft_dlp.gui.theme import MODERN_DARK_QSS
 
 
-def build_app() -> QApplication:
+def build_app() -> int:
     """Build, wire, and run the Qt application.
 
     Args:
         None.
 
     Returns:
-        Active QApplication instance.
+        Qt event loop exit code.
     """
+    # Hide noisy, non-fatal DirectWrite font fallback warnings on Windows.
+    os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.fonts=false")
+
     initialize_database(str(DEFAULT_DB_PATH))
 
     connection_factory = DatabaseConnectionFactory(DEFAULT_DB_PATH)
@@ -76,7 +82,10 @@ def build_app() -> QApplication:
         audit_service=audit_service,
     )
 
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     app = QApplication(sys.argv)
+    app.setStyleSheet(MODERN_DARK_QSS)
     window = MainWindow(
         encryption_engine=encryption_engine,
         sharing_service=sharing_service,
@@ -85,21 +94,24 @@ def build_app() -> QApplication:
         audit_log_repository=audit_log_repository,
     )
     window.showMaximized()
-    app.exec_()
-    return app
+    return int(app.exec_())
 
 
-def main() -> None:
+def main() -> int:
     """CLI entry point for launching the desktop app.
 
     Args:
         None.
 
     Returns:
-        None.
+        Process exit code.
     """
-    build_app()
+    try:
+        return build_app()
+    except KeyboardInterrupt:
+        # Avoid noisy traceback when app run is interrupted from terminal.
+        return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

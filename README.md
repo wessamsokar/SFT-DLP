@@ -12,8 +12,9 @@ SFT-DLP is a local-first desktop application that secures file transfer through 
   - recipient authorization controls.
 - Secure local sharing links with token generation and expiration enforcement.
 - End-to-end audit logging in SQLite for encryption, DLP, sharing, and access attempts.
-- PyQt5 desktop GUI with tabs for Encryption, Sharing, DLP Rules, and Audit Logs.
-- Path traversal protection for user-supplied file/folder paths.
+- PyQt5 desktop GUI with tabs for Encryption, Create Share, Access Share, DLP Rules, and Audit Logs.
+- DLP Rules management supports both creating and deleting rules directly from the GUI.
+- User-selected input/output paths are supported from any absolute location on the OS.
 
 ## Requirements
 
@@ -93,11 +94,19 @@ python -m sft_dlp.main
 
 ### Share a File Securely
 
-1. Open the **Sharing** tab.
+1. Open the **Create Share** tab.
 2. Select source file, recipient details, and expiration hours.
 3. Click **Create Secure Share Link**.
 4. If DLP rules are triggered, sharing is blocked with an error message.
 5. Copy/use the generated local share link or token.
+6. Note: source files already encrypted as `.sftenc` are rejected to prevent double encryption.
+
+### Access a Shared File
+
+1. Open the **Access Share** tab.
+2. Paste the share token/link and choose an output directory.
+3. Click **Access Shared File (Decrypt)**.
+4. Review the decrypted output path shown in the result panel.
 
 
 ### View Audit Logs
@@ -139,7 +148,7 @@ SFT-DLP/
 │   │   ├── theme.py            # Global QSS UI theme
 │   │   └── tabs/               # Feature-specific GUI tabs
 │   └── utils/
-│       └── file_utils.py       # Hashing, MIME, and secure path validation helpers
+│       └── file_utils.py       # Hashing, MIME, and user path normalization helpers
 ├── requirements.txt            # Python dependencies
 └── README.md                   # Project documentation
 ```
@@ -150,4 +159,5 @@ SFT-DLP/
 - Key material is derived with **PBKDF2-HMAC-SHA256** using a random salt and **600,000 iterations**.
 - **DLP checks are enforced before sharing**; blocked policies stop transfer and log the event.
 - Share access enforces **link expiration** at access time and denies expired tokens.
-- File path inputs are validated using absolute-path checks and base-directory boundary enforcement to mitigate path traversal.
+- User-supplied file/folder paths are normalized to absolute OS paths; traversal segments are rejected.
+- Share creation blocks already-encrypted `.sftenc` input to prevent nested encryption and misleading decrypt output.

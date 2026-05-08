@@ -4,11 +4,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from sft_dlp.config import BASE_DIR
 from sft_dlp.core.audit_service import AuditService
 from sft_dlp.core.decryption_engine import DecryptionResult, FileDecryptionEngine
 from sft_dlp.db.repositories import ShareRepository
-from sft_dlp.utils.file_utils import validate_path_within_base
+from sft_dlp.utils.file_utils import normalize_user_path
 
 
 @dataclass
@@ -56,7 +55,7 @@ class ShareAccessService:
         Returns:
             Share access result containing resolved file output.
         """
-        output_dir = validate_path_within_base(output_dir, base_dir=BASE_DIR)
+        output_dir = normalize_user_path(output_dir)
         token = self._extract_token(token_or_link)
         share_record = self._share_repository.get_by_token(token)
         if not share_record:

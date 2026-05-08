@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import mimetypes
-import os
 from pathlib import Path
 
 
@@ -39,25 +38,28 @@ def guess_mime_type(file_path: Path) -> str:
     return guessed or "application/octet-stream"
 
 
-def validate_path_within_base(path_value: Path, *, base_dir: Path) -> Path:
-    """Validate a user-supplied path against path traversal.
+def normalize_user_path(path_value: Path) -> Path:
+    """Normalize a user-supplied path into an absolute path.
 
     Args:
         path_value: Candidate path from user input.
-        base_dir: Allowed root directory that the resolved path must stay under.
 
     Returns:
         Resolved absolute path when validation succeeds.
 
     Raises:
-        ValueError: If path contains `..` traversal segments or resolves outside base.
+        ValueError: If path contains traversal segments.
     """
-    raw_path = str(path_value)
     if ".." in path_value.parts:
         raise ValueError("Path traversal is not allowed.")
+    return path_value.expanduser().resolve()
 
-    absolute_candidate = Path(os.path.abspath(raw_path))
-    absolute_base = Path(os.path.abspath(str(base_dir)))
-    if os.path.commonpath([str(absolute_candidate), str(absolute_base)]) != str(absolute_base):
-        raise ValueError("Path must stay within the allowed project directory.")
-    return absolute_candidate
+
+def validate_path_within_base(path_value: Path, *, base_dir: Path) -> Path:
+    """Backward-compatible wrapper for legacy call sites.
+
+    The application now supports selecting files/directories anywhere on the host
+    filesystem, so `base_dir` is intentionally ignored.
+    """
+    _ = base_dir
+    return normalize_user_path(path_value)

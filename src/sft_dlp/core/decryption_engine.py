@@ -5,12 +5,11 @@ from pathlib import Path
 
 from Crypto.Cipher import AES
 
-from sft_dlp.config import BASE_DIR
 from sft_dlp.core.audit_service import AuditService
 from sft_dlp.core.encryption_engine import MAGIC_HEADER, NONCE_SIZE, TAG_SIZE
 from sft_dlp.core.key_manager import OpenSSLKeyManager
 from sft_dlp.db.repositories import FileRepository
-from sft_dlp.utils.file_utils import validate_path_within_base
+from sft_dlp.utils.file_utils import normalize_user_path
 
 
 @dataclass
@@ -92,10 +91,18 @@ class FileDecryptionEngine:
 
             cipher = AES.new(key_bytes, AES.MODE_GCM, nonce=nonce)
             plaintext = cipher.decrypt_and_verify(ciphertext, tag)
+            if plaintext.startswith(MAGIC_HEADER):
+                raise ValueError(
+                    "Share content is still encrypted. "
+                    "This share was created from an already encrypted file."
+                )
 
-            output_dir = validate_path_within_base(output_dir, base_dir=BASE_DIR)
+            output_dir = normalize_user_path(output_dir)
             output_dir.mkdir(parents=True, exist_ok=True)
-            decrypted_path = output_dir / f"{file_record.original_name}.decrypted"
+            output_name = file_record.original_name
+            if output_name.lower().endswith(".sftenc"):
+                output_name = output_name[: -len(".sftenc")]
+            decrypted_path = output_dir / f"{output_name}.decrypted"
             decrypted_path.write_bytes(plaintext)
 
             self._audit_service.log(

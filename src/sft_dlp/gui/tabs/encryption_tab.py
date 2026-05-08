@@ -33,8 +33,11 @@ class EncryptionTab(QWidget):
         self._encryption_engine = encryption_engine
 
         self._input_path_edit = QLineEdit()
+        self._input_path_edit.setPlaceholderText("Choose a file to encrypt...")
         self._output_path_edit = QLineEdit(str(Path("data") / "encrypted"))
+        self._output_path_edit.setPlaceholderText("Encrypted files output directory")
         self._actor_edit = QLineEdit("operator")
+        self._actor_edit.setPlaceholderText("Action actor (e.g. operator)")
         self._status_label = QLabel("Ready")
 
         self._build_ui()
@@ -54,7 +57,6 @@ class EncryptionTab(QWidget):
         
         container = QWidget()
         container.setObjectName("panel")
-        container.setStyleSheet("QWidget#panel { background-color: #181818; border-radius: 12px; border: 1px solid #2d2d2d; }")
         
         layout = QGridLayout(container)
         layout.setContentsMargins(36, 34, 36, 34)
@@ -85,7 +87,7 @@ class EncryptionTab(QWidget):
         layout.addWidget(encrypt_button, 4, 0, 1, 3)
 
         layout.addWidget(QLabel("Status"), 5, 0)
-        self._status_label.setStyleSheet("color: #a0a0a0; font-style: italic;")
+        self._status_label.setStyleSheet("color: #cbd5e1; font-style: italic; font-size: 16px;")
         layout.addWidget(self._status_label, 5, 1, 1, 2)
         
         main_layout.addWidget(container, 1)

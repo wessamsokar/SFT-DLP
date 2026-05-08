@@ -17,10 +17,7 @@ from sft_dlp.db.repositories import AuditLogRepository, DlpRuleRepository
 from sft_dlp.gui.tabs.audit_logs_tab import AuditLogsTab
 from sft_dlp.gui.tabs.dlp_rules_tab import DlpRulesTab
 from sft_dlp.gui.tabs.encryption_tab import EncryptionTab
-from sft_dlp.gui.tabs.sharing_tab import SharingTab
-from sft_dlp.gui.theme import MODERN_DARK_QSS
-
-
+from sft_dlp.gui.tabs.sharing_tab import AccessShareTab, CreateShareTab
 class MainWindow(QMainWindow):
     """Main desktop window with sidebar navigation across feature tabs."""
 
@@ -46,9 +43,7 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
         self.setWindowTitle("Secure File Transfer & Data Leakage Prevention System")
-        
-        # Apply modern global theme
-        self.setStyleSheet(MODERN_DARK_QSS)
+        self.setMinimumSize(1240, 760)
 
         # Main layout container
         main_widget = QWidget()
@@ -66,14 +61,17 @@ class MainWindow(QMainWindow):
         
         title_label = QLabel("SFT-DLP")
         title_label.setObjectName("appTitle")
+        title_label.setToolTip("Secure File Transfer & Data Leakage Prevention")
         sidebar_layout.addWidget(title_label)
         sidebar_layout.addSpacing(20)
 
         # Sidebar Buttons
         self.btn_encryption = QPushButton("🔒 Encryption")
         self.btn_encryption.setCheckable(True)
-        self.btn_sharing = QPushButton("🔗 Sharing")
-        self.btn_sharing.setCheckable(True)
+        self.btn_create_share = QPushButton("🔗 Create Share")
+        self.btn_create_share.setCheckable(True)
+        self.btn_access_share = QPushButton("🔓 Access Share")
+        self.btn_access_share.setCheckable(True)
         self.btn_dlp = QPushButton("🛡️ DLP Rules")
         self.btn_dlp.setCheckable(True)
         self.btn_audit = QPushButton("📋 Audit Logs")
@@ -82,7 +80,8 @@ class MainWindow(QMainWindow):
         # Group buttons logically
         self.nav_buttons = [
             self.btn_encryption,
-            self.btn_sharing,
+            self.btn_create_share,
+            self.btn_access_share,
             self.btn_dlp,
             self.btn_audit,
         ]
@@ -97,11 +96,11 @@ class MainWindow(QMainWindow):
         self.stacked_widget = QStackedWidget()
         self.stacked_widget.addWidget(EncryptionTab(encryption_engine=encryption_engine))
         self.stacked_widget.addWidget(
-            SharingTab(
+            CreateShareTab(
                 sharing_service=sharing_service,
-                share_access_service=share_access_service,
             )
         )
+        self.stacked_widget.addWidget(AccessShareTab(share_access_service=share_access_service))
         self.stacked_widget.addWidget(DlpRulesTab(dlp_rule_repository=dlp_rule_repository))
         self.stacked_widget.addWidget(AuditLogsTab(audit_log_repository=audit_log_repository))
 
