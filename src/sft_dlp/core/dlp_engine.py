@@ -73,6 +73,28 @@ class DlpPolicyEngine:
             DLP decision containing block/allow outcome and match context.
         """
         file_path = file_path.resolve()
+        if not recipient.is_authorized:
+            self._audit_service.log(
+                event_type="dlp_rule_triggered",
+                actor=actor,
+                status="blocked",
+                message="DLP rule triggered: Unapproved Recipient",
+                file_id=file_id,
+                recipient_id=recipient.recipient_id,
+                metadata={
+                    "rule_type": "recipient",
+                    "decision": "block",
+                    "file_path": str(file_path),
+                    "source": "mandatory_recipient_authorization",
+                },
+            )
+            return DlpDecision(
+                is_blocked=True,
+                decision="block",
+                matched_rule_name="Unapproved Recipient",
+                matched_excerpt=f"recipient={recipient.email}",
+            )
+
         rules = self._rule_repository.get_enabled_rules()
 
         for rule in rules:
